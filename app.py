@@ -148,11 +148,6 @@ def main():
             with open("zombie-pox.md", "r") as f:
                 file_content = f.read()
 
-            file_content = Part.from_uri(
-                file_uri="https://blog.google/products/gemini/google-gemini-deep-research/",
-                mime_type="text/html",
-            )
-
             instruction = f"Translate the following audio into {target_language}."
 
             assistant_response = chat.send_message(
