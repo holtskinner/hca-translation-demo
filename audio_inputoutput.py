@@ -89,13 +89,15 @@ def play_audio(audio_bytes):
             st.error(f"Error playing audio: {e}")
 
 
-def generate_audio(text) -> bytes:
+def generate_audio(text, language="es-US") -> bytes:
+    """Generates audio from text using Google Cloud Text-to-Speech."""
     # Perform the text-to-speech request on the text input with the selected
     # voice parameters and audio file type
     response = tts_client.synthesize_speech(
         input=texttospeech.SynthesisInput(text=text),
         voice=texttospeech.VoiceSelectionParams(
-            language_code="es-US", name="es-US-Chirp-HD-D"
+            language_code=language,
+            name="es-US-Chirp-HD-D" if language == "es-US" else "en-US-Casual-K",
         ),
         audio_config=texttospeech.AudioConfig(
             audio_encoding=texttospeech.AudioEncoding.MP3
@@ -107,6 +109,12 @@ def generate_audio(text) -> bytes:
 def main():
     st.title("HCA Translator")
 
+    # Add radio button for language direction
+    target_language = st.radio(
+        "Patient Language (lenguaje del paciente)",
+        ("Spanish (Español)", "English (Inglés)"),
+    )
+
     duration = st.slider("Recording duration (seconds)", 1, 10, 3)  # Default 3 seconds
     sample_rate = 44100  # Standard audio sample rate
 
@@ -117,12 +125,17 @@ def main():
             audio_bytes = get_audio_bytes(audio, sample_rate)
 
             user_input = Part.from_bytes(data=audio_bytes, mime_type="audio/wav")
+
+            instruction = f"Translate the following audio into {target_language}. Only respond with the translation."
+
+            if target_language == "Spanish (Español)":
+                audio_language = "es-US"
+            else:
+                audio_language = "en-US"
+
             assistant_response = client.models.generate_content(
                 model=MODEL_ID,
-                contents=[
-                    "Translate the following text into Spanish. Only respond with the translation.",
-                    user_input,
-                ],
+                contents=[instruction, user_input],
                 config=GenerateContentConfig(
                     system_instruction="You are a kind, empathetic nurse who is answering a patient's questions.",
                 ),
@@ -131,7 +144,7 @@ def main():
             with st.chat_message("assistant"):
                 st.markdown(assistant_response)
 
-            output_audio_bytes = generate_audio(assistant_response)
+            output_audio_bytes = generate_audio(assistant_response, audio_language)
 
             if output_audio_bytes:
                 play_audio(output_audio_bytes)
