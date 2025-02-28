@@ -144,10 +144,19 @@ def main():
 
             user_input = Part.from_bytes(data=audio_bytes, mime_type="audio/wav")
 
-            instruction = f"Translate the following audio into {target_language}. Only respond with the translation."
+            context = "Use the following context when answering the patient's question."
+            with open("zombie-pox.md", "r") as f:
+                file_content = f.read()
+
+            file_content = Part.from_uri(
+                file_uri="https://blog.google/products/gemini/google-gemini-deep-research/",
+                mime_type="text/html",
+            )
+
+            instruction = f"Translate the following audio into {target_language}."
 
             assistant_response = chat.send_message(
-                message=[instruction, user_input]
+                message=[context, file_content, instruction, user_input]
             ).text
 
             with st.chat_message("assistant"):
