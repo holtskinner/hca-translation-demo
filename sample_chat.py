@@ -3,6 +3,8 @@ from google import genai
 from google.genai.types import GenerateContentConfig, Part
 import streamlit as st
 
+from streamlit_webrtc import webrtc_streamer, WebRtcMode
+import av
 
 # Initialize session state for chat history
 if "chat_history" not in st.session_state:
@@ -42,16 +44,40 @@ st.title("Simple Chat App")
 # Display chat history
 display_chat_history()
 
-# Chat input
-user_input = st.chat_input("Say something:")
 
-if user_input:
+def audio_callback(frame: av.AudioFrame) -> av.AudioFrame:
+    audio_bytes = frame.to_ndarray().tobytes()
+    st.session_state.audio_data = audio_bytes  # Store audio bytes
+    return frame
+
+
+st.title("Audio Recorder in Streamlit")
+webrtc_ctx = webrtc_streamer(
+    key="audio",
+    mode=WebRtcMode.SENDRECV,
+    audio_receiver_size=256,
+    media_stream_constraints={"video": False, "audio": True},
+    async_processing=True,
+)
+
+if webrtc_ctx.audio_receiver:
+    st.write("Recording audio...")
+    if hasattr(st.session_state, "audio_data"):
+        st.audio(st.session_state.audio_data, format="audio/wav")
+        st.write(f"Captured audio size: {len(st.session_state.audio_data)} bytes")
+
+if webrtc_ctx.audio_receiver and hasattr(st.session_state, "audio_data"):
+    st.audio(st.session_state.audio_data, format="audio/wav")
+
+    user_input = Part.from_bytes(
+        data=st.session_state.audio_data, mime_type="audio/wav"
+    )
     # Add user message to chat history
-    st.session_state["chat_history"].append({"sender": "user", "text": user_input})
+    # st.session_state["chat_history"].append({"sender": "user", "text": user_input})
 
     # Display user message immediately
-    with st.chat_message("user"):
-        st.markdown(user_input)
+    # with st.chat_message("user"):
+    #     st.markdown(user_input)
 
     # Simulate an assistant response (replace with your actual logic)
     assistant_response = client.models.generate_content(
