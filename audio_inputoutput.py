@@ -38,17 +38,6 @@ def load_tts_client() -> genai.Client:
     )
 
 
-# Function to display the chat history
-def display_chat_history():
-    for i, message in enumerate(st.session_state["chat_history"]):
-        if message["sender"] == "user":
-            with st.chat_message("user"):
-                st.markdown(message["text"])
-        else:
-            with st.chat_message("assistant"):
-                st.markdown(message["text"])
-
-
 client = load_client()
 
 tts_client = load_tts_client()
@@ -95,7 +84,7 @@ def play_audio(audio_bytes):
     """Plays the audio from a byte stream."""
     if audio_bytes is not None:
         try:
-            st.audio(audio_bytes, format="audio/wav")
+            st.audio(audio_bytes, format="audio/wav", autoplay=True)
         except Exception as e:
             st.error(f"Error playing audio: {e}")
 
@@ -139,21 +128,13 @@ def main():
                 ),
             ).text
 
-            st.write("Assistant Response:")
             with st.chat_message("assistant"):
                 st.markdown(assistant_response)
 
             output_audio_bytes = generate_audio(assistant_response)
 
             if output_audio_bytes:
-                st.write("Playing back the recording:")
                 play_audio(output_audio_bytes)
-
-            # Example: Display the first 100 bytes of the audio
-            # st.write("First 100 bytes:", audio_bytes[:100])
-
-            #  Now you can do something with the audio_bytes, like send it to an API
-            #  or save it to a file.
 
 
 if __name__ == "__main__":
