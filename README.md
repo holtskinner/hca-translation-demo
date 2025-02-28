@@ -32,7 +32,15 @@ To run the Streamlit Application locally (on Cloud Shell), we need to perform th
    export GOOGLE_CLOUD_REGION='us-central1' # If you change this, make sure the region is supported.
    ```
 
-3. To run the application locally, execute the following command:
+3. Authenticate to your Google Cloud Project:
+
+    ```sh
+    gcloud config set project $GOOGLE_CLOUD_PROJECT
+    gcloud auth application-default set-quota-project $GOOGLE_CLOUD_PROJECT
+    gcloud auth application-default login -q
+    ```
+
+4. To run the application locally, execute the following command:
 
    In Cloud Shell, execute the following command:
 
