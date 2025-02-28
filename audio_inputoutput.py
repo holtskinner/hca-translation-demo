@@ -8,6 +8,7 @@ import os
 from google import genai
 from google.genai.types import GenerateContentConfig, Part
 from google.cloud import texttospeech_v1beta1 as texttospeech
+from google.api_core.client_options import ClientOptions
 
 
 # Initialize session state for chat history
@@ -32,7 +33,9 @@ def load_client() -> genai.Client:
 @st.cache_resource
 def load_tts_client() -> genai.Client:
     """Load Google Gen AI Client."""
-    return texttospeech.TextToSpeechClient()
+    return texttospeech.TextToSpeechClient(
+        client_options=ClientOptions(api_endpoint="us-texttospeech.googleapis.com")
+    )
 
 
 # Function to display the chat history
@@ -128,11 +131,11 @@ def main():
             assistant_response = client.models.generate_content(
                 model=MODEL_ID,
                 contents=[
-                    "Translate the following text into Spanish.",
+                    "Translate the following text into Spanish. Only respond with the translation.",
                     user_input,
                 ],
                 config=GenerateContentConfig(
-                    system_instruction="You are a kind, empathetic nurse who is answering a patient's questions about their upcoming surgery.",
+                    system_instruction="You are a kind, empathetic nurse who is answering a patient's questions.",
                 ),
             ).text
 
