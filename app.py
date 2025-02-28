@@ -23,6 +23,17 @@ if PROJECT_ID and not LOCATION:
 
 MODEL_ID = "gemini-2.0-flash-lite"
 
+LANGUAGE_MAP = {
+    "Spanish (Español)": {
+        "language_code": "es-US",
+        "voice_name": "es-US-Chirp3-HD-Puck",
+    },
+    "English (Inglés)": {
+        "language_code": "en-US",
+        "voice_name": "en-US-Chirp3-HD-Fenrir",
+    },
+}
+
 
 @st.cache_resource
 def load_chat():
@@ -96,17 +107,15 @@ def play_audio(audio_bytes):
             st.error(f"Error playing audio: {e}")
 
 
-def generate_audio(text, language="es-US") -> bytes:
+def generate_audio(text, voice_name, language_code) -> bytes:
     """Generates audio from text using Google Cloud Text-to-Speech."""
     # Perform the text-to-speech request on the text input with the selected
     # voice parameters and audio file type
     response = tts_client.synthesize_speech(
         input=texttospeech.SynthesisInput(text=text),
         voice=texttospeech.VoiceSelectionParams(
-            language_code=language,
-            name=(
-                "es-US-Chirp-HD-D" if language == "es-US" else "en-US-Chirp3-HD-Fenrir"
-            ),
+            language_code=language_code,
+            name=voice_name,
         ),
         audio_config=texttospeech.AudioConfig(
             audio_encoding=texttospeech.AudioEncoding.MP3
@@ -137,11 +146,6 @@ def main():
 
             instruction = f"Translate the following audio into {target_language}. Only respond with the translation."
 
-            if target_language == "Spanish (Español)":
-                audio_language = "es-US"
-            else:
-                audio_language = "en-US"
-
             assistant_response = chat.send_message(
                 message=[instruction, user_input]
             ).text
@@ -149,7 +153,11 @@ def main():
             with st.chat_message("assistant"):
                 st.markdown(assistant_response)
 
-            output_audio_bytes = generate_audio(assistant_response, audio_language)
+            output_audio_bytes = generate_audio(
+                assistant_response,
+                voice_name=LANGUAGE_MAP[target_language]["voice_name"],
+                language_code=LANGUAGE_MAP[target_language]["language_code"],
+            )
 
             if output_audio_bytes:
                 play_audio(output_audio_bytes)
