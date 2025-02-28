@@ -25,9 +25,16 @@ MODEL_ID = "gemini-2.0-flash-lite"
 
 
 @st.cache_resource
-def load_client() -> genai.Client:
+def load_chat():
     """Load Google Gen AI Client."""
-    return genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
+    client = genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
+
+    return client.chats.create(
+        model=MODEL_ID,
+        config=GenerateContentConfig(
+            system_instruction="You are a kind, empathetic nurse who is answering a patient's questions.",
+        ),
+    )
 
 
 @st.cache_resource
@@ -38,7 +45,7 @@ def load_tts_client() -> genai.Client:
     )
 
 
-client = load_client()
+chat = load_chat()
 
 tts_client = load_tts_client()
 
@@ -97,7 +104,9 @@ def generate_audio(text, language="es-US") -> bytes:
         input=texttospeech.SynthesisInput(text=text),
         voice=texttospeech.VoiceSelectionParams(
             language_code=language,
-            name="es-US-Chirp-HD-D" if language == "es-US" else "en-US-Casual-K",
+            name=(
+                "es-US-Chirp-HD-D" if language == "es-US" else "en-US-Chirp3-HD-Fenrir"
+            ),
         ),
         audio_config=texttospeech.AudioConfig(
             audio_encoding=texttospeech.AudioEncoding.MP3
@@ -133,12 +142,8 @@ def main():
             else:
                 audio_language = "en-US"
 
-            assistant_response = client.models.generate_content(
-                model=MODEL_ID,
-                contents=[instruction, user_input],
-                config=GenerateContentConfig(
-                    system_instruction="You are a kind, empathetic nurse who is answering a patient's questions.",
-                ),
+            assistant_response = chat.send_message(
+                message=[instruction, user_input]
             ).text
 
             with st.chat_message("assistant"):
